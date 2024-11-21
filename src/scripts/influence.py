@@ -11,9 +11,9 @@ import networkx as nx
 import numpy as np
 
 "importing required user-defined modules"
-from diffusion_models.independent_cascade import independent_cascade
-from diffusion_models.linear_threshold import linear_threshold
-from diffusion_models.pressure_diffusion import pressure_linear_threshold
+from src.diffusion_models.independent_cascade import independent_cascade
+from src.diffusion_models.linear_threshold import linear_threshold
+from src.diffusion_models.pressure_diffusion import pressure_linear_threshold
 
 def influence(network, seed_set, diffusion_model, alpha=0):
     

@@ -2,9 +2,7 @@ import copy
 import argparse
 import networkx as nx
 import numpy as np
-from utils.visualization import visualize_diffusion
-from utils.graph_utils import _initialize_influences, _initialize_thresholds
-from utils.graph_utils import initialize_graph, clear_output_directory
+from src.utils.visualization import visualize_diffusion
 
 def pressure_linear_threshold(G, seeds, steps=0, alpha=0, output_dir=""):
     """
