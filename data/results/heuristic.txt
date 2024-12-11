@@ -1,0 +1,31 @@
+1. Degree Heuristic (α=0): Selects nodes with the largest out-degree, assuming nodes with more outgoing connections are the most influential.
+    
+2. Degree Heuristic (𝛼≠0): Selects nodes based on their out-degree and an α-weighted in-degree, emphasizing both spreading potential and incoming pressure.
+    -almost always worse than a=0
+
+3. Degree Discount Heuristic (α=0): Adjusts node scores by reducing the influence of neighbors already selected, avoiding redundant influence overlap.
+
+4. Degree Discount Heuristic (𝛼≠0): Balances out-degree, selected neighbors, and α-weighted in-degree, combining spread efficiency and incoming influence in a pressure-aware way.
+    -almost always worse than a=0
+    
+5. Two-Step Pressure Heuristic: First pre-selects 5k nodes with the highest out-degree, then narrows to k nodes with the highest in-bound weight sum, ensuring a balance between spread and pressure.
+
+6. Pressure Flow Heuristic: Ranks nodes based on the product of their total incoming pressure and out-degree, prioritizing nodes that can convert pressure into widespread influence.
+    -may be better in denser graph
+
+7. Amplified Coverage Heuristic: Combines out-degree with the α-amplified in-degrees of neighbors, favoring nodes surrounded by influential connections.
+    -most promising
+
+8. Pressure Degree Discount Heuristic: Integrates degree discounting with α-weighted in-degree pressure, dynamically adjusting scores to account for selected neighbors and incoming influence.
+    -not good
+
+9. Adaptive Combined Heuristic: Combines degree, degree discount, and pressure-based influence dynamically using tunable weights, providing a flexible approach for balancing spread and pressure.
+
+10. Local Pressure Heuristic: Adds α-scaled in-degrees of neighbors to a node’s degree, emphasizing local influence dynamics in addition to spreading potential.
+    -may be better in denser graph
+
+11. Hybrid Degree Heuristic: Multiplies a node’s out-degree by 1+α⋅in_degree, combining outgoing connections with incoming pressure in a multiplicative fashion.
+    -may be better in denser graph
+
+12. Adjusted Degree Discount Heuristic: Discounts the scores of nodes based on selected neighbors while boosting the influence of α-weighted in-degree, combining spread reduction with pressure awareness.
+    -may be better in denser graph

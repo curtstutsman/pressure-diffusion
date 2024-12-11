@@ -1,0 +1,13 @@
+Model,Heuristic,Average Influence
+pressure_threshold,Degree,325.818
+pressure_threshold,Degree Discount,327.218
+pressure_threshold,Degree  w/ alpha,319.262
+pressure_threshold,Degree Discount w/ alpha,321.39
+pressure_threshold,Two Step,324.7
+pressure_threshold,Pressure Flow,326.702
+pressure_threshold,Amplified Coverage,330.568
+pressure_threshold,Pressure Degree Discount,278.456
+pressure_threshold,Adaptive Combined,315.878
+pressure_threshold,Local Pressure,331.026
+pressure_threshold,Hybdrid Degree,326.028
+pressure_threshold,Adjusted Degree Discount,323.372

@@ -1,9 +1,0 @@
-Model,Heuristic,Seed Nodes,Influence Spread
-linear_threshold,Degree,"[62, 31, 33]",20
-linear_threshold,Degree Discount,"[62, 31, 33]",20
-linear_threshold,Pressure Degree,"[62, 44, 31]",15
-linear_threshold,Pressure Degree Discount,"[62, 31, 33]",20
-pressure_threshold,Degree,"[62, 31, 33]",32
-pressure_threshold,Degree Discount,"[62, 31, 33]",32
-pressure_threshold,Pressure Degree,"[62, 44, 31]",16
-pressure_threshold,Pressure Degree Discount,"[62, 31, 33]",32

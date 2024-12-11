@@ -1,0 +1,7 @@
+Model,Heuristic,Seed Nodes,Influence Spread
+pressure_threshold,Degree,"[349, 128, 113]",324
+pressure_threshold,Degree Discount,"[349, 128, 113]",324
+pressure_threshold,Two Step,"[9, 449, 810]",290
+pressure_threshold,Pressure Flow,"[9, 449, 836]",293
+pressure_threshold,Amplified Coverage,"[349, 128, 574]",321
+pressure_threshold,Pressure Degree Discount,"[349, 9, 449]",287

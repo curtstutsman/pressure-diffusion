@@ -1,1 +1,0 @@
-from .heuristic import degree, degree_discount

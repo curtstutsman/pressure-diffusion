@@ -1,0 +1,9 @@
+Model,Graph Type,Top 10 Seed Nodes,Counts,Average Influence
+linear_threshold,random,"[241, 434, 333]","[1, 1, 1]",826.0
+pressure_threshold,random,"[140, 21, 80]","[1, 1, 1]",1158.0
+linear_threshold,parent_dominant,"[108, 28, 181]","[1, 1, 1]",1498.0
+pressure_threshold,parent_dominant,"[380, 168, 20]","[1, 1, 1]",1284.0
+linear_threshold,louvain_facebook,"[26, 299, 150]","[1, 1, 1]",827.0
+pressure_threshold,louvain_facebook,"[17, 40, 111]","[1, 1, 1]",1050.0
+linear_threshold,stochastic_block,"[4, 469, 454]","[1, 1, 1]",114.0
+pressure_threshold,stochastic_block,"[38, 165, 213]","[1, 1, 1]",1032.0

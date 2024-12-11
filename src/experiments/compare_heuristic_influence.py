@@ -37,7 +37,7 @@ Outputs:
 #=======================================
 import pandas as pd
 import argparse
-from src.scripts.heuristic import degree_discount, degree
+from src.scripts.heuristic import degree_discount, degree, two_step_pressure_heuristic, pressure_flow, amplified_coverage, pressure_degree_discount
 from src.scripts.influence import influence
 from src.utils.graph_utils import create_directed_graph, add_random_thresholds
 from src.utils.output_utils import save_results_to_csv
@@ -78,15 +78,17 @@ if __name__ == "__main__":
     heuristics = {
         "Degree": lambda g, k: degree(g, k, alpha=0),  # Standard degree heuristic
         "Degree Discount": lambda g, k: degree_discount(g, k, alpha=0),  # Standard degree discount heuristic
-        "Pressure Degree": lambda g, k: degree(g, k, alpha=alpha),  # Modified degree heuristic with pressure
-        "Pressure Degree Discount": lambda g, k: degree_discount(g, k, alpha=alpha),  # Modified degree discount with pressure
+        "Two Step" : lambda g, k: two_step_pressure_heuristic(g, k),
+        "Pressure Flow" : lambda g, k: pressure_flow(g, k),
+        "Amplified Coverage" : lambda g, k: amplified_coverage(g, k, alpha=1),
+        "Pressure Degree Discount" : lambda g, k: pressure_degree_discount(g, k, alpha=alpha)
     }
 
     # Results container
     results = {"Model": [], "Heuristic": [], "Seed Nodes" : [], "Influence Spread": []}
 
     # Run experiments for each model
-    for model_type in ["linear_threshold", "pressure_threshold"]:
+    for model_type in ["pressure_threshold"]:
         for heuristic_name, heuristic_fn in heuristics.items():
             # Use heuristic function to obtain seed set
             seed_set = heuristic_fn(graph, budget)

@@ -1,0 +1,14 @@
+Model,Graph Type,Heuristic,Average Influence
+pressure_threshold,parent_dominant,Degree,265.934
+pressure_threshold,parent_dominant,Degree Discount,266.38
+pressure_threshold,parent_dominant,Degree  w/ alpha,273.808
+pressure_threshold,parent_dominant,Degree Discount w/ alpha,265.086
+pressure_threshold,parent_dominant,Two Step,260.906
+pressure_threshold,parent_dominant,Pressure Flow,275.116
+pressure_threshold,parent_dominant,Amplified Coverage,268.742
+pressure_threshold,parent_dominant,Pressure Degree Discount,256.584
+pressure_threshold,parent_dominant,Adaptive Combined,260.028
+pressure_threshold,parent_dominant,Local Pressure,265.74
+pressure_threshold,parent_dominant,Local Pressure alpha=1,262.946
+pressure_threshold,parent_dominant,Hybdrid Degree,260.242
+pressure_threshold,parent_dominant,Adjusted Degree Discount,271.03
