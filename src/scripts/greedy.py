@@ -21,36 +21,34 @@ def greedy_im(network, budget, diffusion_model, alpha=0):
         - total_influence: Total influence spread for the selected seed set.
     """
     nodes = list(nx.nodes(network))
+    max_influence = []
     best_seed_set = []
-    total_influence = 0
 
     for _ in range(budget):
         # Nodes not yet selected
         nodes_to_try = list(set(nodes) - set(best_seed_set))
         influence = np.zeros(len(nodes_to_try))
 
-        for i, node in enumerate(nodes_to_try):
+        for i in range(len(nodes_to_try)):
             # Add the candidate node to the seed set
-            seed_set = best_seed_set + [node]
+            best_seed_set_plus_ith_node = \
+                        list(set(best_seed_set + [nodes_to_try[i]]))
 
             # Simulate the diffusion process
             if diffusion_model == "independent_cascade":
-                layers = independent_cascade(network, seed_set)
+                layers = independent_cascade(network, best_seed_set_plus_ith_node)
             elif diffusion_model == "linear_threshold":
-                layers = linear_threshold(network, seed_set)
+                layers = linear_threshold(network, best_seed_set_plus_ith_node)
             elif diffusion_model == "pressure_threshold":
-                layers = pressure_linear_threshold(network, seed_set, alpha=alpha)
+                layers = pressure_linear_threshold(network, best_seed_set_plus_ith_node, alpha=alpha)
             else:
                 raise ValueError(f"Unknown diffusion model: {diffusion_model}")
 
-            # Compute the total spread in this single simulation
-            influence[i] = sum(len(layer) for layer in layers)
+            for k in range(len(layers)):
+                influence[i] = influence[i] + len(layers[k])
 
         # Select the node with the highest marginal influence
-        best_node = nodes_to_try[np.argmax(influence)]
-        best_seed_set.append(best_node)
+        max_influence.append(np.max(influence))    
+        best_seed_set.append(nodes_to_try[np.argmax(influence)])
 
-        # Update the total influence based on the node selected
-        total_influence += np.max(influence)
-
-    return best_seed_set, total_influence
+    return best_seed_set, max(max_influence)

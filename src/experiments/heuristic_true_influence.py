@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
-    results_file = os.path.join(output_dir, "heuristic_true_influence_parent_graphs.csv")
+    results_file = os.path.join(output_dir, "heuristic_true_influence.csv")
 
     # Delete existing results file
     if os.path.exists(results_file):
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     models = ["pressure_threshold"]
 
     # Graph Types
-    graph_types = ["parent_dominant"]
+    graph_types = ["parent_dominant", "random", "louvain_facebook", "stochastic_block"]
 
     # Create a fresh results file
     pd.DataFrame(columns=["Model", "Graph Type", "Heuristic", "Average Influence"]).to_csv(results_file, index=False)

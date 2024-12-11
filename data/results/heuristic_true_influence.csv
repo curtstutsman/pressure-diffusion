@@ -1,13 +1,53 @@
-Model,Heuristic,Average Influence
-pressure_threshold,Degree,289.278
-pressure_threshold,Degree Discount,287.314
-pressure_threshold,Degree  w/ alpha,285.382
-pressure_threshold,Degree Discount w/ alpha,284.476
-pressure_threshold,Two Step,281.768
-pressure_threshold,Pressure Flow,278.148
-pressure_threshold,Amplified Coverage,292.568
-pressure_threshold,Pressure Degree Discount,279.524
-pressure_threshold,Adaptive Combined,278.314
-pressure_threshold,Local Pressure,281.682
-pressure_threshold,Hybdrid Degree,281.204
-pressure_threshold,Adjusted Degree Discount,285.53
+Model,Graph Type,Heuristic,Average Influence
+pressure_threshold,parent_dominant,Degree,325.112
+pressure_threshold,parent_dominant,Degree Discount,327.764
+pressure_threshold,parent_dominant,Degree  w/ alpha,317.22
+pressure_threshold,parent_dominant,Degree Discount w/ alpha,328.79
+pressure_threshold,parent_dominant,Two Step,321.006
+pressure_threshold,parent_dominant,Pressure Flow,324.762
+pressure_threshold,parent_dominant,Amplified Coverage,331.986
+pressure_threshold,parent_dominant,Pressure Degree Discount,324.734
+pressure_threshold,parent_dominant,Adaptive Combined,336.72
+pressure_threshold,parent_dominant,Local Pressure,346.408
+pressure_threshold,parent_dominant,Local Pressure alpha=1,324.708
+pressure_threshold,parent_dominant,Hybdrid Degree,327.432
+pressure_threshold,parent_dominant,Adjusted Degree Discount,333.638
+pressure_threshold,random,Degree,282.494
+pressure_threshold,random,Degree Discount,259.042
+pressure_threshold,random,Degree  w/ alpha,236.76
+pressure_threshold,random,Degree Discount w/ alpha,232.438
+pressure_threshold,random,Two Step,237.712
+pressure_threshold,random,Pressure Flow,270.384
+pressure_threshold,random,Amplified Coverage,167.362
+pressure_threshold,random,Pressure Degree Discount,130.858
+pressure_threshold,random,Adaptive Combined,171.062
+pressure_threshold,random,Local Pressure,268.572
+pressure_threshold,random,Local Pressure alpha=1,135.426
+pressure_threshold,random,Hybdrid Degree,234.698
+pressure_threshold,random,Adjusted Degree Discount,230.57
+pressure_threshold,louvain_facebook,Degree,336.478
+pressure_threshold,louvain_facebook,Degree Discount,337.688
+pressure_threshold,louvain_facebook,Degree  w/ alpha,337.19
+pressure_threshold,louvain_facebook,Degree Discount w/ alpha,337.334
+pressure_threshold,louvain_facebook,Two Step,337.59
+pressure_threshold,louvain_facebook,Pressure Flow,337.386
+pressure_threshold,louvain_facebook,Amplified Coverage,337.608
+pressure_threshold,louvain_facebook,Pressure Degree Discount,338.4
+pressure_threshold,louvain_facebook,Adaptive Combined,337.986
+pressure_threshold,louvain_facebook,Local Pressure,337.782
+pressure_threshold,louvain_facebook,Local Pressure alpha=1,338.03
+pressure_threshold,louvain_facebook,Hybdrid Degree,337.454
+pressure_threshold,louvain_facebook,Adjusted Degree Discount,337.734
+pressure_threshold,stochastic_block,Degree,30.006
+pressure_threshold,stochastic_block,Degree Discount,27.566
+pressure_threshold,stochastic_block,Degree  w/ alpha,27.924
+pressure_threshold,stochastic_block,Degree Discount w/ alpha,27.97
+pressure_threshold,stochastic_block,Two Step,28.636
+pressure_threshold,stochastic_block,Pressure Flow,28.556
+pressure_threshold,stochastic_block,Amplified Coverage,28.836
+pressure_threshold,stochastic_block,Pressure Degree Discount,28.69
+pressure_threshold,stochastic_block,Adaptive Combined,28.914
+pressure_threshold,stochastic_block,Local Pressure,27.344
+pressure_threshold,stochastic_block,Local Pressure alpha=1,28.082
+pressure_threshold,stochastic_block,Hybdrid Degree,27.694
+pressure_threshold,stochastic_block,Adjusted Degree Discount,27.716

@@ -69,8 +69,8 @@ def simulate(graph, model_type, k, alpha):
     """
     Perform a single simulation with randomized weights and thresholds using the greedy algorithm.
     """
-    # randomized_graph = weighted_network(add_random_thresholds(graph.copy()), method="rn")
-    seed_set, spread = greedy_im(graph, k,  model_type, alpha=alpha)
+    random_graph = add_random_thresholds(graph)
+    seed_set, spread = greedy_im(random_graph, k,  model_type, alpha=alpha)
     return seed_set, spread
 
 def create_graph(graph_type, num_nodes, edge_prob):
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     # Models and graph types to evaluate
     models = ["linear_threshold", "pressure_threshold"]
-    graph_types = ["random", "parent_dominant", "louvain_facebook", "stochastic_block"]
+    graph_types = ["random"]
 
     # Create a fresh results file
     pd.DataFrame(columns=["Model", "Graph Type", "Top 10 Seed Nodes", "Counts", "Average Influence"]).to_csv(results_file, index=False)
@@ -119,6 +119,7 @@ if __name__ == "__main__":
     # Run experiments
     for graph_type in graph_types:
         base_graph = create_graph(graph_type, num_nodes, edge_prob)
+        base_graph = weighted_network(base_graph, 'wc')
         for model in models:
             print(f"Running {num_simulations} simulations for {model} on {graph_type} graph...")
             
@@ -137,7 +138,6 @@ if __name__ == "__main__":
                 ))
 
             # Process simulation results
-            print(simulation_results)
             for seed_set, spread in simulation_results:
                 all_seeds.extend(seed_set)
                 total_influence += spread
