@@ -1,102 +1,149 @@
-import argparse
-import numpy as np
-import networkx as nx
-import requests
-import gzip
-import os
-import pickle
-import io
-from diffusion_models.pressure_diffusion import pressure_linear_threshold
-from utils.graph_utils import clear_output_directory
-from scripts.heuristic import compute_heuristic
-from scripts.greedy import greedy_im
-from utils.visualization import visualize_diffusion
-from scripts.influence import influence
+"""
+Experiment: Evaluating True Influence Spread of Different IM-Solvers under Pressure Threshold
 
-def parse_arguments():
-    """Parse command-line arguments for the diffusion model."""
-    parser = argparse.ArgumentParser(description="Run the Linear Threshold Diffusion Model.")
-    
-    parser.add_argument(
-        "--alpha", type=float, default=0,
-        help="Set the alpha parameter for influence adjustment (default: 0.1)"
+Author: Curt Stutsman
+Date: 12/10/2024
+
+Description:
+    The purpose of this script is to compare the performance of the degree heuristic, the amplified coverage heuristic, and the greedy algorithm
+    under the pressure threshold diffusion model. Each algorithm will have its influence evaluated on the facebook SNAPS sample graph (4,039 nodes, 88,234 edges)
+    with budgets ranging (0, 20]
+
+    Graphs Evaluated:
+    1. SNAP's Facebook: https://snap.stanford.edu/data/ego-Facebook.html
+
+Goals:
+- Simulate diffusion for multiple IM solving algs/heuristics
+- Compare performance as budget increases
+
+Inputs:
+--alpha:        Pressure parameter alpha to control influence propagation.
+--simulations:  Number of simulations to run per heuristic.
+
+Outputs:
+- Results are written to a CSV file after simulations.
+"""
+
+#=======================================
+#   Library Imports
+#=======================================
+import pandas as pd
+import argparse
+import os
+from concurrent.futures import ProcessPoolExecutor
+from src.scripts.greedy import greedy_im
+from src.utils.graph_utils import create_facebook_graph
+from src.scripts.weighted_network import weighted_network
+from src.scripts.heuristic import (
+    DegreeHeuristic,
+    AmplifiedCoverageHeuristic
+)
+from src.scripts.influence import influence
+
+# Global Constants
+MODEL = 'pressure_threshold'
+OUTPUT_DIR = "data/results"
+MAX_BUDGET = 20
+
+#=======================================
+#   Argument Parsing
+#=======================================
+def parse_args():
+    """
+    Parse command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Evaluate Greedy Algorithm, Degree Heuristic, and Amplified Coverage Heuristic Under Pressure Diffusion."
     )
     parser.add_argument(
-        "--budget", type=int, default=1,
-        help="Set the budget for size of seed set"
+        "--alpha", type=float, required=True, help="Pressure parameter for influence propagation."
     )
     parser.add_argument(
-        "--visualize", action="store_true",
-        help="Enable or disable visualization (default: True)"
+        "--simulations", type=int, required=True, help="Number of simulations to run per heuristic."
     )
-    parser.add_argument(
-        "--model", type=str, default="pressure_threshold",
-        help="Diffusion model to use"
-    )
-    parser.add_argument(
-        "--output_dir", type=str, default="",
-        help="directory to output graph to"
-    )
-    
     return parser.parse_args()
 
-if __name__ == "__main__":
+#=======================================
+#   Simulation Function
+#=======================================
+def simulate(args):
+    """
+    Perform a single simulation with the given algorithm and budget.
 
-    args = parse_arguments()
-    if args.output_dir:
-        clear_output_directory(args.output_dir)
+    Args:
+        args (tuple): Contains (network, algorithm, budget, alpha)
 
-    # URL of the Facebook network dataset
-    url = "https://snap.stanford.edu/data/facebook_combined.txt.gz"
-    pickle_file = "facebook.pkl"
-
-    # Check if the graph is already saved as a pickle file
-    if os.path.exists(pickle_file):
-        # Load the graph from the pickle file
-        with open(pickle_file, 'rb') as f:
-            G = pickle.load(f)
-        print("Graph loaded from pickle file.")
+    Returns:
+        float: The influence spread result.
+    """
+    network, algorithm, budget, alpha = args
+    if algorithm == 'greedy':
+        # Greedy algorithm returns both seed_set and spread
+        _, spread = greedy_im(network, budget, MODEL, alpha)
     else:
-        # Download and read the data from the URL
-        response = requests.get(url)
-        with gzip.open(io.BytesIO(response.content), 'rt') as f:
-            G = nx.read_edgelist(f, create_using=nx.Graph(), nodetype=int)
+        # Instantiate the appropriate heuristic
+        if algorithm == 'degree':
+            heuristic = DegreeHeuristic(alpha=0)
+        elif algorithm == 'amplified_coverage':
+            heuristic = AmplifiedCoverageHeuristic(alpha=alpha)
         
-        # Save the graph to a pickle file for future use
-        with open(pickle_file, 'wb') as f:
-            pickle.dump(G, f)
-        print("Graph downloaded and saved to pickle file.")
+        # Select seed set and calculate influence spread
+        seed_set = heuristic.select(network, budget)
+        spread = influence(network, seed_set, MODEL, alpha)
+    
+    return spread
 
-    # Now you can use the graph without re-downloading
-    print(f"Number of nodes: {G.number_of_nodes()}")
-    print(f"Number of edges: {G.number_of_edges()}")
+#=======================================
+#   Main Execution
+#=======================================
+if __name__ == "__main__":
+    # Parse command-line arguments
+    args = parse_args()
+    alpha = args.alpha
+    num_simulations = args.simulations
 
-    G = G.to_directed()
+    # Generate facebook networkx graph with edged weights = 1/in_degree
+    network = weighted_network(create_facebook_graph(), 'wc')
 
-    # init thresholds
-    for n in G.nodes():
-        if 'threshold' not in G._node[n]:
-            G._node[n]['threshold'] = np.random.rand(1)[0]   
-        
-    #Run heuristic
-    heuristic_set = compute_heuristic(G, args.budget, args.alpha)
-    heuristic_influence = influence(G, heuristic_set, args.model, args.alpha)
-    print("Pressure Threshold heuristic values:")
-    print(heuristic_set, heuristic_influence)
+    # Ensure output directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    results_file = os.path.join(OUTPUT_DIR, "main.csv")
 
-    heuristic_set = compute_heuristic(G, args.budget, 0)
-    heuristic_influence = influence(G, heuristic_set, args.model, 0)
-    print("Base Threshold heuristic values:")
-    print(heuristic_set, heuristic_influence)
+    # Delete existing results file
+    if os.path.exists(results_file):
+        os.remove(results_file)
 
-    #Run diffusion
-    best_seed_set, max_influence = greedy_im(G, budget=args.budget, diffusion_model=args.model, alpha=args.alpha)
-    print("Greedy results for pressure threshold")
-    print(best_seed_set, max_influence )
+    # Algorithms / Heuristics to test
+    algorithms = ['degree', 'amplified_coverage', 'greedy']
 
-    best_seed_set, max_influence = greedy_im(G, budget=args.budget, diffusion_model="linear_threshold", alpha=args.alpha)
-    print("Greedy results for base threshold")
-    print(best_seed_set, max_influence )
+    # Create a fresh results file
+    pd.DataFrame(columns=["Model", "Algorithm", "Budget", "Average Influence"]).to_csv(results_file, index=False)
 
-    # if args.output_dir:
-    #     visualize_diffusion(G, sum(active_nodes, []), args.output_dir, args.budget)
+    for k in range(1, MAX_BUDGET+1):
+        for algorithm in algorithms:
+            print(f"Running {num_simulations} simulations for {algorithm} with budget = {k}...")
+            total_influence = 0
+
+            # Prepare the arguments for each simulation
+            simulation_args = [(network, algorithm, k, alpha) for _ in range(num_simulations)]
+            
+            # Execute simulations in parallel
+            with ProcessPoolExecutor() as executor:
+                # Using list to force evaluation and allow sum()
+                simulation_results = list(executor.map(simulate, simulation_args))
+
+            avg_influence = sum(simulation_results) / num_simulations
+
+            new_result = {
+                "Model": MODEL,
+                "Algorithm": algorithm,
+                "Budget" : k,
+                "Average Influence": avg_influence
+            }
+
+            # Save to CSV
+            results_df = pd.read_csv(results_file)
+            results_df = pd.concat([results_df, pd.DataFrame([new_result])], ignore_index=True)
+            results_df.to_csv(results_file, index=False)
+
+            print(f"Completed {algorithm} with budget = {k}. Average Influence: {avg_influence}")

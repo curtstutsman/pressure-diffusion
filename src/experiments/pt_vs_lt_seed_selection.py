@@ -67,7 +67,7 @@ def parse_args():
 
 def simulate(graph, model_type, k, alpha):
     """
-    Perform a single simulation with randomized weights and thresholds using the greedy algorithm.
+    Perform a single simulation with randomized thresholds using the greedy algorithm.
     """
     random_graph = add_random_thresholds(graph)
     seed_set, spread = greedy_im(random_graph, k,  model_type, alpha=alpha)

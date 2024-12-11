@@ -102,3 +102,32 @@ def sample_louvain_facebook():
     communities = list(set(partition.values()))
     sampled_nodes = [node for node, comm in partition.items() if comm == communities[0]]
     return G.subgraph(sampled_nodes).to_directed()
+
+def create_facebook_graph():
+    # URL of the Facebook network dataset
+    url = "https://snap.stanford.edu/data/facebook_combined.txt.gz"
+    pickle_file = "data/raw_networks/facebook.pkl"
+
+    # Check if the graph is already saved as a pickle file
+    if os.path.exists(pickle_file):
+        # Load the graph from the pickle file
+        with open(pickle_file, 'rb') as f:
+            G = pickle.load(f)
+        print("Graph loaded from pickle file.")
+    else:
+        # Download and read the data from the URL
+        response = requests.get(url)
+        with gzip.open(io.BytesIO(response.content), 'rt') as f:
+            G = nx.read_edgelist(f, create_using=nx.Graph(), nodetype=int)
+        
+        # Save the graph to a pickle file for future use
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(G, f)
+        print("Graph downloaded and saved to pickle file.")
+
+    # Now you can use the graph without re-downloading
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+
+    G = G.to_directed()
+    return G
