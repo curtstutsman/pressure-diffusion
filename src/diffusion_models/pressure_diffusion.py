@@ -29,6 +29,20 @@ def pressure_linear_threshold(G, seeds, steps=0, alpha=0, output_dir=""):
         thresholds[n] = threshold
     nx.set_node_attributes(DG, thresholds, 'threshold')
 
+    # Initialize influences
+    influences = {}
+    in_degrees = dict(DG.in_degree())
+    for u, v in DG.edges():
+        if (u, v) not in influences:
+            influence = 1.0 / in_degrees[v] if in_degrees[v] > 0 else 0.0
+            influences[(u, v)] = influence
+        else:
+            influence = DG.edges[u, v].get('influence', 1.0 / in_degrees[v])
+            if influence > 1:
+                raise ValueError(f"Edge ({u}, {v}) has influence {influence} > 1.")
+            influences[(u, v)] = influence
+    nx.set_edge_attributes(DG, influences, 'influence')
+
     # Initialize activated set as a set for O(1) lookups
     activated = set(seeds)
     layer_i_nodes = [list(activated)]

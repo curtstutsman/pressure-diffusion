@@ -30,7 +30,7 @@ Outputs:
 import pandas as pd
 import argparse
 import os
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.scripts.greedy import greedy_im
 from src.utils.graph_utils import create_facebook_graph
 from src.scripts.weighted_network import weighted_network
@@ -39,11 +39,12 @@ from src.scripts.heuristic import (
     AmplifiedCoverageHeuristic
 )
 from src.scripts.influence import influence
+import multiprocessing
 
 # Global Constants
 MODEL = 'pressure_threshold'
 OUTPUT_DIR = "data/results"
-MAX_BUDGET = 20
+MAX_BUDGET = 1
 
 #=======================================
 #   Argument Parsing
@@ -59,35 +60,41 @@ def parse_args():
         "--alpha", type=float, required=True, help="Pressure parameter for influence propagation."
     )
     parser.add_argument(
+        "--nodes", type=int, required=False, default=0, help="Number of nodes to include in subgraph of facebook graph."
+    )
+    parser.add_argument(
         "--simulations", type=int, required=True, help="Number of simulations to run per heuristic."
+    )
+    parser.add_argument(
+        "--output", type=str, default="main.csv", help="Output CSV file name."
     )
     return parser.parse_args()
 
 #=======================================
 #   Simulation Function
 #=======================================
-def simulate(args):
+def simulate(simulation_task):
     """
     Perform a single simulation with the given algorithm and budget.
 
     Args:
-        args (tuple): Contains (network, algorithm, budget, alpha)
+        simulation_task (dict): Contains network, algorithm, budget, alpha.
 
     Returns:
         float: The influence spread result.
     """
-    network, algorithm, budget, alpha = args
+    network, algorithm, budget, alpha = simulation_task['network'], simulation_task['algorithm'], simulation_task['budget'], simulation_task['alpha']
+    
     if algorithm == 'greedy':
-        # Greedy algorithm returns both seed_set and spread
         _, spread = greedy_im(network, budget, MODEL, alpha)
     else:
-        # Instantiate the appropriate heuristic
         if algorithm == 'degree':
             heuristic = DegreeHeuristic(alpha=0)
         elif algorithm == 'amplified_coverage':
             heuristic = AmplifiedCoverageHeuristic(alpha=alpha)
+        else:
+            raise ValueError(f"Unknown algorithm: {algorithm}")
         
-        # Select seed set and calculate influence spread
         seed_set = heuristic.select(network, budget)
         spread = influence(network, seed_set, MODEL, alpha)
     
@@ -101,49 +108,72 @@ if __name__ == "__main__":
     args = parse_args()
     alpha = args.alpha
     num_simulations = args.simulations
+    nodes = args.nodes
+    output_file = args.output
 
     # Generate facebook networkx graph with edged weights = 1/in_degree
-    network = weighted_network(create_facebook_graph(), 'wc')
+    network_unweighted = create_facebook_graph(nodes)
+    network = weighted_network(network_unweighted, 'wc')
 
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    results_file = os.path.join(OUTPUT_DIR, "main.csv")
+    results_file = os.path.join(OUTPUT_DIR, output_file)
 
-    # Delete existing results file
-    if os.path.exists(results_file):
-        os.remove(results_file)
+     # Initialize or create results file with headers if it doesn't exist
+    if not os.path.exists(results_file):
+        pd.DataFrame(columns=["Model", "Algorithm", "Budget", "Average Influence"]).to_csv(results_file, index=False)
 
     # Algorithms / Heuristics to test
     algorithms = ['degree', 'amplified_coverage', 'greedy']
 
-    # Create a fresh results file
-    pd.DataFrame(columns=["Model", "Algorithm", "Budget", "Average Influence"]).to_csv(results_file, index=False)
+    # Determine number of workers (using all available CPUs)
+    num_workers = multiprocessing.cpu_count()
+    print(f"Utilizing {num_workers} CPUs")
 
-    for k in range(1, MAX_BUDGET+1):
-        for algorithm in algorithms:
-            print(f"Running {num_simulations} simulations for {algorithm} with budget = {k}...")
-            total_influence = 0
+     # Initialize ProcessPoolExecutor once
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # Iterate over budgets and algorithms
+        for k in range(1, MAX_BUDGET + 1):
+            for algorithm in algorithms:
+                print(f"Running {num_simulations} simulations for {algorithm} with budget = {k}...")
+                
+                # Prepare the arguments for each simulation
+                simulation_tasks = [{
+                    'network': network,
+                    'algorithm': algorithm,
+                    'budget': k,
+                    'alpha': alpha
+                } for _ in range(num_simulations)]
+                
+                total_influence = 0.0
 
-            # Prepare the arguments for each simulation
-            simulation_args = [(network, algorithm, k, alpha) for _ in range(num_simulations)]
-            
-            # Execute simulations in parallel
-            with ProcessPoolExecutor() as executor:
-                # Using list to force evaluation and allow sum()
-                simulation_results = list(executor.map(simulate, simulation_args))
+                # Submit all tasks and collect futures
+                futures = [executor.submit(simulate, task) for task in simulation_tasks]
+                
+                # As each future completes, accumulate the results
+                for future in as_completed(futures):
+                    try:
+                        spread = future.result()
+                        total_influence += spread
+                    except Exception as exc:
+                        print(f"Simulation generated an exception: {exc}")
+                        # Depending on requirements, you might want to handle exceptions differently
 
-            avg_influence = sum(simulation_results) / num_simulations
+                # Calculate average influence
+                avg_influence = total_influence / num_simulations
 
-            new_result = {
-                "Model": MODEL,
-                "Algorithm": algorithm,
-                "Budget" : k,
-                "Average Influence": avg_influence
-            }
+                # Prepare the result entry
+                new_result = {
+                    "Model": MODEL,
+                    "Algorithm": algorithm,
+                    "Budget": k,
+                    "Average Influence": avg_influence
+                }
 
-            # Save to CSV
-            results_df = pd.read_csv(results_file)
-            results_df = pd.concat([results_df, pd.DataFrame([new_result])], ignore_index=True)
-            results_df.to_csv(results_file, index=False)
+                # Append the new result to the CSV file
+                results_df = pd.DataFrame([new_result])
+                results_df.to_csv(results_file, mode='a', header=False, index=False)
 
-            print(f"Completed {algorithm} with budget = {k}. Average Influence: {avg_influence}")
+                print(f"Completed {algorithm} with budget = {k}. Average Influence: {avg_influence}")
+
+    print(f"All simulations completed. Results saved to {results_file}")

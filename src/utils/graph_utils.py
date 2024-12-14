@@ -103,7 +103,7 @@ def sample_louvain_facebook():
     sampled_nodes = [node for node, comm in partition.items() if comm == communities[0]]
     return G.subgraph(sampled_nodes).to_directed()
 
-def create_facebook_graph():
+def create_facebook_graph(nodes=0):
     # URL of the Facebook network dataset
     url = "https://snap.stanford.edu/data/facebook_combined.txt.gz"
     pickle_file = "data/raw_networks/facebook.pkl"
@@ -124,6 +124,10 @@ def create_facebook_graph():
         with open(pickle_file, 'wb') as f:
             pickle.dump(G, f)
         print("Graph downloaded and saved to pickle file.")
+
+    if nodes:
+        random_nodes = random.sample(list(G.nodes()), nodes)
+        G = G.subgraph(random_nodes).copy()
 
     # Now you can use the graph without re-downloading
     print(f"Number of nodes: {G.number_of_nodes()}")
