@@ -1,7 +1,7 @@
 from src.diffusion_models.independent_cascade import independent_cascade
 from src.diffusion_models.linear_threshold import linear_threshold
 from src.diffusion_models.pressure_diffusion import pressure_linear_threshold
-from src.scripts.weighted_network import weighted_network
+from src.diffusion_models.test  import pressure_linear_threshold_optimized
 import networkx as nx
 import numpy as np
 
@@ -22,7 +22,7 @@ def greedy_im(network, budget, diffusion_model, alpha=0):
     """
     nodes = list(nx.nodes(network))
     max_influence = []
-    best_seed_set = []
+    best_seed_set = [] 
 
     for _ in range(budget):
         # Nodes not yet selected
@@ -40,7 +40,7 @@ def greedy_im(network, budget, diffusion_model, alpha=0):
             elif diffusion_model == "linear_threshold":
                 layers = linear_threshold(network, best_seed_set_plus_ith_node)
             elif diffusion_model == "pressure_threshold":
-                layers = pressure_linear_threshold(network, best_seed_set_plus_ith_node, alpha=alpha)
+                layers = pressure_linear_threshold_optimized(network, best_seed_set_plus_ith_node, alpha=alpha)
             else:
                 raise ValueError(f"Unknown diffusion model: {diffusion_model}")
 
@@ -50,5 +50,8 @@ def greedy_im(network, budget, diffusion_model, alpha=0):
         # Select the node with the highest marginal influence
         max_influence.append(np.max(influence))    
         best_seed_set.append(nodes_to_try[np.argmax(influence)])
+
+    print(best_seed_set)
+    print(max(max_influence))
 
     return best_seed_set, max(max_influence)

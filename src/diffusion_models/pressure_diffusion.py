@@ -1,58 +1,103 @@
-import copy
-import argparse
-import networkx as nx
+"""
+Implement linear threshold models
+"""
+#!/usr/bin/env python
+#    Copyright (C) 2004-2010 by
+#    Hung-Hsuan Chen <hhchen@psu.edu>
+#    All rights reserved.
+#    BSD license.
+#    NetworkX:http://networkx.lanl.gov/.
+__author__ = """Hung-Hsuan Chen (hhchen@psu.edu)"""
+
 import numpy as np
-from src.utils.visualization import visualize_diffusion
+import copy
+import networkx as nx
 
-def pressure_linear_threshold(G, seeds, steps=0, alpha=0, output_dir=""):
-    """
-    Simulate the pressure threshold diffusion model.
-    """
+__all__ = ['linear_threshold']
 
-    if G.is_multigraph():
-        raise ValueError("pressure_linear_threshold() is not defined for multigraphs.")
+def pressure_linear_threshold(G, seeds, alpha=0, steps=0):
+  """Return the active nodes of each diffusion step by linear threshold model
 
-    # Validate seeds
-    missing_seeds = [s for s in seeds if s not in G]
-    if missing_seeds:
-        raise ValueError(f"Seeds {missing_seeds} are not present in the graph.")
+  Parameters
+  ----------
+  G : networkx graph
+      The number of nodes.
 
-    # Convert to directed graph if not already
-    DG = G.to_directed() if not G.is_directed() else G.copy()
+  seeds: list of nodes
+      The seed nodes of the graph
 
-    # Initialize thresholds
-    thresholds = {}
-    for n in DG.nodes():
-        threshold = DG.nodes[n].get('threshold', np.random.rand())
-        if threshold > 1:
-            raise ValueError(f"Node {n} has threshold {threshold} > 1.")
-        thresholds[n] = threshold
-    nx.set_node_attributes(DG, thresholds, 'threshold')
+  steps: int
+      The number of steps to diffuse
+      When steps <= 0, the model diffuses until no more nodes
+      can be activated
 
-    # Initialize influences
-    influences = {}
-    in_degrees = dict(DG.in_degree())
-    for u, v in DG.edges():
-        if (u, v) not in influences:
-            influence = 1.0 / in_degrees[v] if in_degrees[v] > 0 else 0.0
-            influences[(u, v)] = influence
-        else:
-            influence = DG.edges[u, v].get('influence', 1.0 / in_degrees[v])
-            if influence > 1:
-                raise ValueError(f"Edge ({u}, {v}) has influence {influence} > 1.")
-            influences[(u, v)] = influence
-    nx.set_edge_attributes(DG, influences, 'influence')
+  Return
+  ------
+  layer_i_nodes : list of list of activated nodes
+    layer_i_nodes[0]: the seeds
+    layer_i_nodes[k]: the nodes activated at the kth diffusion step
 
-    # Initialize activated set as a set for O(1) lookups
-    activated = set(seeds)
-    layer_i_nodes = [list(activated)]
+  Notes
+  -----
+  1. Each edge is supposed to have an attribute "influence".  If not, the
+     default value is given (1/in_degree)
 
-    if steps <= 0:
-        return _diffuse_all(DG, activated, alpha, layer_i_nodes)
-    return _diffuse_k_rounds(DG, activated, steps, alpha, layer_i_nodes)
+  References
+  ----------
+  [1] GranovetterMark. Threshold models of collective behavior.
+      The American journal of sociology, 1978.
 
+  Examples
+  --------
+  >>> DG = nx.DiGraph()
+  >>> DG.add_edges_from([(1,2), (1,3), (1,5), (2,1), (3,2), (4,2), (4,3), \
+  >>>   (4,6), (5,3), (5,4), (5,6), (6,4), (6,5)])
+  >>> layers = networkx_addon.information_propagation.linear_threshold(DG, [1])
 
-def _diffuse_all(G, A, alpha, layer_i_nodes):
+  """
+  if type(G) == nx.MultiGraph or type(G) == nx.MultiDiGraph:
+      raise Exception( \
+          "linear_threshold() is not defined for graphs with multiedges.")
+
+  # make sure the seeds are in the graph
+  for s in seeds:
+    if s not in G.nodes():
+      raise Exception("seed", s, "is not in graph")
+
+  # change to directed graph
+  if not G.is_directed():
+    DG = G.to_directed()
+  else:
+    DG = copy.deepcopy(G)
+
+  # init thresholds
+  for n in DG.nodes():
+    if 'threshold' not in DG._node[n]:
+      DG._node[n]['threshold'] = np.random.rand(1)[0]    
+    elif DG._node[n]['threshold'] > 1:
+      raise Exception("node threshold:", DG._node[n]['threshold'], \
+          "cannot be larger than 1")
+
+  # init influences
+  in_deg = DG.in_degree()
+  for e in DG.edges():
+    if 'influence' not in DG[e[0]][e[1]]:
+      DG[e[0]][e[1]]['influence'] = 1.0 / in_deg[e[1]]
+    elif DG[e[0]][e[1]]['influence'] > 1:
+      raise Exception("edge influence:", DG[e[0]][e[1]]['influence'], \
+          "cannot be larger than 1")
+      
+  # perform diffusion
+  A = copy.deepcopy(seeds)
+  if steps <= 0:
+    # perform diffusion until no more nodes can be activated
+    return _diffuse_all(DG, A, alpha)
+  # perform diffusion for at most "steps" rounds only
+  return _diffuse_k_rounds(DG, A, alpha, steps)
+
+def _diffuse_all(G, A, alpha):
+  layer_i_nodes = [ ]
+  layer_i_nodes.append([i for i in A])
   while True:
     len_old = len(A)
     A, activated_nodes_of_this_round = _diffuse_one_round(G, A, alpha)
@@ -61,8 +106,9 @@ def _diffuse_all(G, A, alpha, layer_i_nodes):
       break
   return layer_i_nodes
 
-
-def _diffuse_k_rounds(G, A, steps, alpha, layer_i_nodes):
+def _diffuse_k_rounds(G, A, alpha, steps):
+  layer_i_nodes = [ ]
+  layer_i_nodes.append([i for i in A])
   while steps > 0 and len(A) < len(G):
     len_old = len(A)
     A, activated_nodes_of_this_round = _diffuse_one_round(G, A, alpha)
@@ -72,7 +118,6 @@ def _diffuse_k_rounds(G, A, steps, alpha, layer_i_nodes):
     steps -= 1
   return layer_i_nodes
 
-
 def _diffuse_one_round(G, A, alpha):
   activated_nodes_of_this_round = set()
   for s in A:
@@ -81,19 +126,18 @@ def _diffuse_one_round(G, A, alpha):
       if nb in A:
         continue
       active_nb = list(set(G.predecessors(nb)).intersection(set(A)))
-      incoming_influence = _influence_sum(G, active_nb, nb)
-      if incoming_influence >= G._node[nb]['threshold']:
+      total_influence = _influence_sum(G, active_nb, nb)
+      if total_influence >= G._node[nb]['threshold']:
         activated_nodes_of_this_round.add(nb)
-        _adjust_outgoing_influence(G, nb, alpha, incoming_influence, A)
-
-  A.update(activated_nodes_of_this_round)
+        _adjust_outgoing_influence(G, nb, alpha, total_influence, A)
+  A.extend(list(activated_nodes_of_this_round))
   return A, list(activated_nodes_of_this_round)
 
 def _influence_sum(G, froms, to):
-    influence_sum = 0.0
-    for f in froms:
-        influence_sum += G[f][to]['influence']
-    return influence_sum
+  influence_sum = 0.0
+  for f in froms:
+    influence_sum += G[f][to]['influence']
+  return influence_sum
 
 def _adjust_outgoing_influence(G, node, alpha, total_influence, A):
     for neighbor in G.successors(node):
@@ -101,4 +145,3 @@ def _adjust_outgoing_influence(G, node, alpha, total_influence, A):
             G[node][neighbor]['influence'] = min(
                 1.0, G[node][neighbor]['influence'] + alpha * total_influence
             )
-

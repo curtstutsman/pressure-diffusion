@@ -30,9 +30,10 @@ Outputs:
 import pandas as pd
 import argparse
 import os
+import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.scripts.greedy import greedy_im
-from src.utils.graph_utils import create_facebook_graph
+from src.utils.graph_utils import create_facebook_graph, sample_louvain_facebook
 from src.scripts.weighted_network import weighted_network
 from src.scripts.heuristic import (
     DegreeHeuristic,
@@ -112,16 +113,27 @@ if __name__ == "__main__":
     output_file = args.output
 
     # Generate facebook networkx graph with edged weights = 1/in_degree
-    network_unweighted = create_facebook_graph(nodes)
+    # network_unweighted = create_facebook_graph(nodes)
+    network_unweighted = sample_louvain_facebook()
     network = weighted_network(network_unweighted, 'wc')
+
+    # init thresholds
+    for n in network.nodes():
+        if 'threshold' not in network._node[n]:
+            network._node[n]['threshold'] = np.random.rand(1)[0]  
 
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     results_file = os.path.join(OUTPUT_DIR, output_file)
 
-     # Initialize or create results file with headers if it doesn't exist
-    if not os.path.exists(results_file):
-        pd.DataFrame(columns=["Model", "Algorithm", "Budget", "Average Influence"]).to_csv(results_file, index=False)
+    # ------------------------------------------------------------
+    # If the file already exists, remove it to start fresh
+    if os.path.exists(results_file):
+        os.remove(results_file)
+
+    # Create a new file with headers
+    pd.DataFrame(columns=["Model", "Algorithm", "Budget", "Average Influence"]).to_csv(results_file, index=False)
+    # ------------------------------------------------------------
 
     # Algorithms / Heuristics to test
     algorithms = ['degree', 'amplified_coverage', 'greedy']
