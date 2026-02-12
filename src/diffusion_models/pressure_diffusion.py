@@ -1,14 +1,6 @@
 """
 Implement linear threshold models
 """
-#!/usr/bin/env python
-#    Copyright (C) 2004-2010 by
-#    Hung-Hsuan Chen <hhchen@psu.edu>
-#    All rights reserved.
-#    BSD license.
-#    NetworkX:http://networkx.lanl.gov/.
-__author__ = """Hung-Hsuan Chen (hhchen@psu.edu)"""
-
 import numpy as np
 import copy
 import networkx as nx
@@ -141,7 +133,6 @@ def _influence_sum(G, froms, to):
 
 def _adjust_outgoing_influence(G, node, alpha, total_influence, A):
     for neighbor in G.successors(node):
-        if neighbor not in A:
-            G[node][neighbor]['influence'] = min(
-                1.0, G[node][neighbor]['influence'] + alpha * total_influence
-            )
+          G[node][neighbor]['influence'] = min(
+              1.0, G[node][neighbor]['influence'] + alpha * total_influence
+          )

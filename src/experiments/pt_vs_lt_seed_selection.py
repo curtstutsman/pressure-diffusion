@@ -47,6 +47,7 @@ from src.utils.graph_utils import (
     generate_parent_dominant_graph,
     sample_louvain_facebook,
     generate_stochastic_block_model,
+    create_facebook_graph
 )
 from src.scripts.weighted_network import weighted_network
 
@@ -110,7 +111,7 @@ if __name__ == "__main__":
         os.remove(results_file)
 
     # Models and graph types to evaluate
-    models = ["linear_threshold", "pressure_threshold"]
+    models = ["pressure_threshold"]
     graph_types = ["random"]
 
     # Create a fresh results file
@@ -118,7 +119,7 @@ if __name__ == "__main__":
 
     # Run experiments
     for graph_type in graph_types:
-        base_graph = create_graph(graph_type, num_nodes, edge_prob)
+        base_graph = create_facebook_graph(num_nodes)
         base_graph = weighted_network(base_graph, 'wc')
         for model in models:
             print(f"Running {num_simulations} simulations for {model} on {graph_type} graph...")

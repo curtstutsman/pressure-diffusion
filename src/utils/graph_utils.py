@@ -6,11 +6,10 @@ import io
 import requests
 import pickle
 import os
-import community as community_louvain
-from networkx.generators.community import stochastic_block_model
+from src.utils.path_utils import ROOT
 
 
-def create_directed_graph(num_nodes, edge_probability):
+def create_erdos_renyi_graph(num_nodes, edge_probability):
     """
     Creates a random directed graph with a specified number of nodes and edge probability.
 
@@ -34,6 +33,9 @@ def create_directed_graph(num_nodes, edge_probability):
             if u != v:
                 if random.random() < edge_probability:
                     graph.add_edge(u, v)
+
+    print(f"Number of nodes: {graph.number_of_nodes()}")
+    print(f"Number of edges: {graph.number_of_edges()}")
 
     return graph
 
@@ -106,7 +108,7 @@ def sample_louvain_facebook():
 def create_facebook_graph(nodes=0):
     # URL of the Facebook network dataset
     url = "https://snap.stanford.edu/data/facebook_combined.txt.gz"
-    pickle_file = "data/raw_networks/facebook.pkl"
+    pickle_file = ROOT + "/data/raw_networks/facebook.pkl"
 
     # Check if the graph is already saved as a pickle file
     if os.path.exists(pickle_file):
@@ -133,5 +135,116 @@ def create_facebook_graph(nodes=0):
     print(f"Number of nodes: {G.number_of_nodes()}")
     print(f"Number of edges: {G.number_of_edges()}")
 
+    G = G.to_directed()
+    return G
+
+def create_wiki_graph(nodes=0):
+    # URL of the Wikipedia network dataset
+    url = "https://snap.stanford.edu/data/wiki-Vote.txt.gz"
+    pickle_file = ROOT + "/data/raw_networks/wiki.pkl"
+
+    # Check if the graph is already saved as a pickle file
+    if os.path.exists(pickle_file):
+        # Load the graph from the pickle file
+        with open(pickle_file, 'rb') as f:
+            G = pickle.load(f)
+        print("Graph loaded from pickle file.")
+    else:
+        # Download and read the data from the URL
+        response = requests.get(url)
+        with gzip.open(io.BytesIO(response.content), 'rt') as f:
+            G = nx.read_edgelist(f, create_using=nx.Graph(), nodetype=int)
+        
+        # Save the graph to a pickle file for future use
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(G, f)
+        print("Graph downloaded and saved to pickle file.")
+
+    if nodes:
+        random_nodes = random.sample(list(G.nodes()), nodes)
+        G = G.subgraph(random_nodes).copy()
+
+    # Now you can use the graph without re-downloading
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+
+    G = G.to_directed()
+    return G
+
+
+def create_bitcoin_graph(nodes=0):
+    # URL of the Facebook network dataset
+    url = "https://snap.stanford.edu/data/soc-sign-bitcoinotc.csv.gz"
+    pickle_file = ROOT + "/data/raw_networks/bitcoin.pkl"
+
+    # Check if the graph is already saved as a pickle file
+    if os.path.exists(pickle_file):
+        # Load the graph from the pickle file
+        with open(pickle_file, 'rb') as f:
+            G = pickle.load(f)
+        print("Graph loaded from pickle file.")
+    else:
+        # Download and read the data from the URL
+        response = requests.get(url)
+        with gzip.open(io.BytesIO(response.content), 'rt') as f:
+            G = nx.DiGraph(name="Bitcoin‑OTC")
+            for line in f:
+                src, dst, rating, ts = line.strip().split(',')
+                G.add_edge(int(src), int(dst))
+            
+        # Save the graph to a pickle file for future use
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(G, f)
+        print("Graph downloaded and saved to pickle file.")
+
+    if nodes:
+        random_nodes = random.sample(list(G.nodes()), nodes)
+        G = G.subgraph(random_nodes).copy()
+
+    # Now you can use the graph without re-downloading
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+
+    G = G.to_directed()
+    return G
+
+def generate_watts_strogatz(n=5000, k=8, p=0.01):
+    """
+    Generate a Watts-Strogatz small-world graph.
+    n: number of nodes
+    k: each node is connected to k nearest neighbors in a ring topology
+    p: probability of rewiring each edge
+    """
+    G = nx.watts_strogatz_graph(n, k, p)
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+    G = G.to_directed()
+    return G
+
+
+def generate_planted_partition(l=50, k=100, p_in=0.05, p_out=0.0001):
+    """
+    Generate a planted partition graph (stochastic block model).
+    l: number of communities
+    k: number of nodes per community
+    p_in: probability of edges inside communities
+    p_out: probability of edges between communities (set small for weak expansion)
+    """
+    G = nx.planted_partition_graph(l, k, p_in, p_out)
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+    G = G.to_directed()
+    return G
+
+
+def generate_barabasi_albert(n=5000, m=5):
+    """
+    Generate a Barabási–Albert scale-free graph.
+    n: number of nodes
+    m: number of edges to attach from a new node to existing nodes
+    """
+    G = nx.barabasi_albert_graph(n, m)
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
     G = G.to_directed()
     return G

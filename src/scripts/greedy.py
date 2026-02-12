@@ -1,11 +1,10 @@
-from src.diffusion_models.independent_cascade import independent_cascade
-from src.diffusion_models.linear_threshold import linear_threshold
-from src.diffusion_models.pressure_diffusion import pressure_linear_threshold
-from src.diffusion_models.test  import pressure_linear_threshold_optimized
-import networkx as nx
-import numpy as np
+import typing as t
+from cynetdiff.models import DiffusionModel
+from tqdm import tqdm, trange
+import heapq
 
-def greedy_im(network, budget, diffusion_model, alpha=0):
+
+def greedy_im(model: DiffusionModel, n: int, k: int, num_trials: int = 1_000):
     """
     Greedy Algorithm for selecting the best seed set of a user-specified budget.
     Assumes simulation looping and averaging are handled by the experiment script.
@@ -20,38 +19,10 @@ def greedy_im(network, budget, diffusion_model, alpha=0):
         - best_seed_set: List of selected seed nodes.
         - total_influence: Total influence spread for the selected seed set.
     """
-    nodes = list(nx.nodes(network))
-    max_influence = []
-    best_seed_set = [] 
 
-    for _ in range(budget):
-        # Nodes not yet selected
-        nodes_to_try = list(set(nodes) - set(best_seed_set))
-        influence = np.zeros(len(nodes_to_try))
+    S, spread, = [], []
 
-        for i in range(len(nodes_to_try)):
-            # Add the candidate node to the seed set
-            best_seed_set_plus_ith_node = \
-                        list(set(best_seed_set + [nodes_to_try[i]]))
+    for _ in trange(k):
 
-            # Simulate the diffusion process
-            if diffusion_model == "independent_cascade":
-                layers = independent_cascade(network, best_seed_set_plus_ith_node)
-            elif diffusion_model == "linear_threshold":
-                layers = linear_threshold(network, best_seed_set_plus_ith_node)
-            elif diffusion_model == "pressure_threshold":
-                layers = pressure_linear_threshold_optimized(network, best_seed_set_plus_ith_node, alpha=alpha)
-            else:
-                raise ValueError(f"Unknown diffusion model: {diffusion_model}")
-
-            for k in range(len(layers)):
-                influence[i] = influence[i] + len(layers[k])
-
-        # Select the node with the highest marginal influence
-        max_influence.append(np.max(influence))    
-        best_seed_set.append(nodes_to_try[np.argmax(influence)])
-
-    print(best_seed_set)
-    print(max(max_influence))
-
-    return best_seed_set, max(max_influence)
+        max_mg = 0
+        for node not in 

@@ -18,3 +18,4 @@ def visualize_diffusion(G, active_nodes, output_dir, budget):
     output_path = os.path.join(output_dir, f"graph_budget_{budget}.png")
     plt.savefig(output_path)
     plt.close()
+

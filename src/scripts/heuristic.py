@@ -20,29 +20,35 @@ class DegreeHeuristic(HeuristicBase):
         return sorted(scores, key=scores.get, reverse=True)[:k]
 
 
-class DegreeDiscountHeuristic(HeuristicBase):
-    """Degree discount heuristic adjusted with alpha."""
-    def select(self, graph, k):
-        degrees = {
-            node: graph.out_degree(node) + (self.alpha * graph.in_degree(node))
-            for node in graph.nodes()
-        }
-        t = {node: 0 for node in graph.nodes()}  # Tracks selected neighbors
-        discounted_degrees = degrees.copy()
-        selected_nodes = []
+def degree_discount(graph, k):
+    degrees = {
+        node: graph.out_degree(node)
+        for node in graph.nodes()
+    }
+    t = {node: 0 for node in graph.nodes()}  # Tracks selected neighbors
+    discounted_degrees = degrees.copy()
+    selected_nodes = []
 
-        for _ in range(k):
-            u = max(discounted_degrees, key=discounted_degrees.get)
-            selected_nodes.append(u)
+    for _ in range(k):
+        u = max(discounted_degrees, key=discounted_degrees.get)
+        selected_nodes.append(u)
 
-            for neighbor in graph.neighbors(u):
-                if neighbor not in selected_nodes:
-                    t[neighbor] += 1
-                    discounted_degrees[neighbor] = degrees[neighbor] - t[neighbor]
+        for neighbor in graph.neighbors(u):
+            if neighbor not in selected_nodes:
+                t[neighbor] += 1
+                discounted_degrees[neighbor] = degrees[neighbor] - t[neighbor]
 
-            discounted_degrees.pop(u)
+        discounted_degrees.pop(u)
 
-        return selected_nodes
+    return selected_nodes
+
+def amplified_coverage(graph, k, alpha):
+    scores = {}
+    for node in graph.nodes():
+        neighbor_influence = sum(graph.in_degree(neighbor) for neighbor in graph.neighbors(node))
+        scores[node] = graph.out_degree(node) + alpha * neighbor_influence
+
+    return sorted(scores, key=scores.get, reverse=True)[:k]
 
 
 class TwoStepPressureHeuristic(HeuristicBase):
@@ -75,16 +81,6 @@ class PressureFlowHeuristic(HeuristicBase):
 
         return sorted(scores, key=scores.get, reverse=True)[:k]
 
-
-class AmplifiedCoverageHeuristic(HeuristicBase):
-    """Amplified coverage heuristic."""
-    def select(self, graph, k):
-        scores = {}
-        for node in graph.nodes():
-            neighbor_influence = sum(graph.in_degree(neighbor) for neighbor in graph.neighbors(node))
-            scores[node] = graph.out_degree(node) + self.alpha * neighbor_influence
-
-        return sorted(scores, key=scores.get, reverse=True)[:k]
 
 
 class PressureDegreeDiscountHeuristic(HeuristicBase):
